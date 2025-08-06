@@ -141,21 +141,26 @@
     <script type="module">
         // Import functions from the Firebase SDKs
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, addDoc, getDocs, query } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // --- Firebase Configuration ---
-        // Use environment variables provided by the platform
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-quiz-app';
-        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
-        const DB_COLLECTION_PATH = `artifacts/${appId}/public/data/results_grade_5_chinese_112`;
+        // --- Firebase Configuration (Hardcoded for portability) ---
+        // This configuration is now self-contained and will work on GitHub Pages.
+        const firebaseConfig = {
+            apiKey: "AIzaSyA5yiDVFaIKOJ-UKIqEKpwftxhEQ8SSBmM",
+            authDomain: "th-chinese-1.firebaseapp.com",
+            projectId: "th-chinese-1",
+            storageBucket: "th-chinese-1.appspot.com",
+            messagingSenderId: "740688157010",
+            appId: "1:740688157010:web:ce56f965bbebf3fea5428b",
+            measurementId: "G-HWCCCX2XF2"
+        };
+        const DB_COLLECTION_NAME = "results_grade_5_chinese_112";
 
         // Initialize Firebase
-        let app, db, auth;
+        let app, db;
         try {
             app = initializeApp(firebaseConfig);
             db = getFirestore(app);
-            auth = getAuth(app);
         } catch (e) {
             console.error("Firebase initialization failed:", e);
             showAlert("無法連接到資料庫，請稍後再試。");
@@ -377,7 +382,7 @@
 
             allDOM.dbStatusEl.textContent = '正在儲存作答紀錄...';
             try {
-                await addDoc(collection(db, DB_COLLECTION_PATH), {
+                await addDoc(collection(db, DB_COLLECTION_NAME), {
                     studentClass: studentClass,
                     studentName: studentName,
                     score: finalScore,
@@ -470,7 +475,7 @@
             }
 
             try {
-                const q = query(collection(db, DB_COLLECTION_PATH));
+                const q = query(collection(db, DB_COLLECTION_NAME));
                 const querySnapshot = await getDocs(q);
                 
                 if (querySnapshot.empty) {
@@ -526,7 +531,7 @@
                 return;
             }
             try {
-                const q = query(collection(db, DB_COLLECTION_PATH));
+                const q = query(collection(db, DB_COLLECTION_NAME));
                 const querySnapshot = await getDocs(q);
                 if (querySnapshot.empty) {
                     showAlert("目前沒有任何作答紀錄可匯出。");
@@ -587,23 +592,12 @@
         };
         
         // --- App Entry Point ---
-        (async () => {
-            if (auth) {
-                try {
-                    // Authenticate with Firebase
-                    const token = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
-                    if (token) {
-                        await signInWithCustomToken(auth, token);
-                    } else {
-                        await signInAnonymously(auth);
-                    }
-                    console.log("Firebase authentication successful.");
-                } catch (error) {
-                    console.error("Firebase authentication failed:", error);
-                    showAlert("無法進行使用者驗證，部分功能可能無法使用。");
-                }
+        // This function runs as soon as the page loads.
+        (function() {
+            if (!db) {
+                console.warn("Database not ready, but initializing quiz UI.");
             }
-            // Initialize the quiz interface
+            // Initialize the quiz interface regardless of DB status
             initializeQuiz();
         })();
 
